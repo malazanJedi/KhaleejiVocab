@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wordhoard — vocabulary board</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Caveat:wght@500;600;700&family=Literata:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Sans:wght@400;500;600;700&family=Noto+Naskh+Arabic:wght@500;700&family=Noto+Sans+JP:wght@500;700&family=Noto+Sans+KR:wght@500;700&family=Noto+Sans+SC:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --board:#1e2a22;
+    --board-alt:#26362c;
+    --board-line: rgba(243,238,221,0.10);
+    --chalk:#f3eedd;
+    --chalk-dim: rgba(243,238,221,0.62);
+    --card:#faf6ea;
+    --card-shadow: rgba(10,14,10,0.35);
+    --ink:#2b2318;
+    --ink-dim:#6b6353;
+    --yellow:#e8b94a;
+    --yellow-ink:#3a2a05;
+    --blue:#6fafc7;
+    --blue-ink:#0d2833;
+    --pen:#c1483a;
+    --radius: 10px;
+    --font-display:'Space Grotesk', system-ui, sans-serif;
+    --font-hand:'Caveat', cursive;
+    --font-body:'Literata', Georgia, serif;
+    --font-mono:'IBM Plex Mono', ui-monospace, monospace;
+    --font-word:'Noto Sans','Noto Naskh Arabic','Noto Sans JP','Noto Sans KR','Noto Sans SC', system-ui, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(ellipse at 20% -10%, rgba(232,185,74,0.06), transparent 45%),
+      radial-gradient(ellipse at 90% 0%, rgba(111,175,199,0.07), transparent 40%),
+      var(--board);
+    color:var(--chalk);
+    font-family:var(--font-body);
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:inherit;}
+  button{font-family:inherit;}
+  .icon{width:17px;height:17px;flex:none;}
+  .icon path,.icon circle,.icon line,.icon polyline{
+    stroke:currentColor; stroke-width:1.8; fill:none; stroke-linecap:round; stroke-linejoin:round;
+  }
+  ::selection{background:var(--yellow); color:var(--yellow-ink);}
+
+  /* ---------- layout shell ---------- */
+  .wrap{max-width:1180px; margin:0 auto; padding:28px 22px 90px;}
+
+  header.top{
+    display:flex; align-items:flex-end; justify-content:space-between; gap:16px;
+    padding-bottom:18px; margin-bottom:20px;
+    border-bottom:1px dashed var(--board-line);
+    flex-wrap:wrap;
+  }
+  .brand h1{
+    font-family:var(--font-display); font-weight:700; font-size:2rem; margin:0;
+    letter-spacing:-0.01em; color:var(--chalk);
+  }
+  .brand h1 span{color:var(--yellow);}
+  .brand p{
+    font-family:var(--font-hand); font-size:1.25rem; margin:2px 0 0; color:var(--blue);
+  }
+  .top-actions{display:flex; gap:10px; align-items:center;}
+  .icon-btn{
+    display:inline-flex; align-items:center; justify-content:center;
+    width:38px; height:38px; border-radius:50%;
+    background:transparent; border:1px solid var(--board-line); color:var(--chalk-dim);
+    cursor:pointer; transition:background .15s, color .15s, border-color .15s;
+  }
+  .icon-btn:hover{background:var(--board-alt); color:var(--chalk); border-color:transparent;}
+
+  .menu{position:relative;}
+  .menu-panel{
+    position:absolute; right:0; top:46px; background:var(--board-alt);
+    border:1px solid var(--board-line); border-radius:var(--radius);
+    min-width:190px; padding:6px; z-index:40; box-shadow:0 12px 30px rgba(0,0,0,0.4);
+    display:none;
+  }
+  .menu-panel.open{display:block;}
+  .menu-panel button{
+    width:100%; text-align:left; background:none; border:none; color:var(--chalk);
+    padding:9px 10px; border-radius:6px; font-size:0.92rem; cursor:pointer;
+    display:flex; align-items:center; gap:9px; font-family:var(--font-display);
+  }
+  .menu-panel button:hover{background:rgba(243,238,221,0.08);}
+
+  /* ---------- toolbar ---------- */
+  .toolbar{display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:14px;}
+  .search-tray{
+    flex:1 1 280px; display:flex; align-items:center; gap:8px;
+    background:var(--board-alt); border:1px solid var(--board-line);
+    border-radius:var(--radius); padding:10px 14px; color:var(--chalk-dim);
+  }
+  .search-tray:focus-within{border-color:var(--blue);}
+  .search-tray input{
+    background:none; border:none; outline:none; color:var(--chalk);
+    font-family:var(--font-body); font-size:0.98rem; width:100%;
+  }
+  .search-tray input::placeholder{color:var(--chalk-dim);}
+  .btn{
+    font-family:var(--font-display); font-weight:600; font-size:0.92rem;
+    border-radius:999px; padding:11px 18px; border:none; cursor:pointer;
+    display:inline-flex; align-items:center; gap:8px; white-space:nowrap;
+    transition:transform .12s ease, filter .12s ease;
+  }
+  .btn:active{transform:scale(0.97);}
+  .btn-primary{background:var(--yellow); color:var(--yellow-ink);}
+  .btn-primary:hover{filter:brightness(1.06);}
+  .btn-ghost{background:transparent; color:var(--chalk); border:1px solid var(--board-line);}
+  .btn-ghost:hover{background:var(--board-alt);}
+  .btn-pen{background:var(--pen); color:#fbeceb;}
+
+  /* ---------- grid & cards ---------- */
+  .grid{
+    display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:22px 18px;
+  }
+  .card{
+    position:relative; background:var(--card); color:var(--ink);
+    border-radius:4px 4px 10px 10px; padding:20px 18px 16px;
+    box-shadow:0 10px 18px -8px var(--card-shadow), 0 2px 0 rgba(0,0,0,0.05);
+    transform:rotate(var(--rot,0deg));
+    transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .card:hover{transform:rotate(0deg) translateY(-3px); box-shadow:0 16px 26px -10px var(--card-shadow);}
+  .grid .card:nth-child(4n+1){--rot:-1.1deg;}
+  .grid .card:nth-child(4n+2){--rot:0.9deg;}
+  .grid .card:nth-child(4n+3){--rot:-0.6deg;}
+  .grid .card:nth-child(4n+4){--rot:1.3deg;}
+  .tape{
+    position:absolute; top:-9px; left:22px; width:52px; height:18px;
+    opacity:0.9; transform:rotate(-3deg);
+    border-radius:2px;
+  }
+  .tape.c0{background:rgba(232,185,74,0.85);}
+  .tape.c1{background:rgba(111,175,199,0.85);}
+  .tape.c2{background:rgba(193,72,58,0.7);}
+  .card .original{
+    font-family:var(--font-word); font-weight:700; font-size:1.45rem; line-height:1.4;
+    word-break:break-word; margin-bottom:6px; margin-top:4px; direction:rtl; text-align:right;
+  }
+  .card .translit{
+    font-family:var(--font-mono); font-style:italic; font-size:0.86rem; color:var(--ink-dim);
+    margin-bottom:10px; word-break:break-word;
+  }
+  .card .english{
+    font-family:var(--font-body); font-size:0.95rem; line-height:1.4; color:var(--ink);
+    padding-top:9px; border-top:1px dashed rgba(43,35,24,0.18);
+  }
+  .card .actions{
+    position:absolute; top:10px; right:10px; display:flex; gap:4px;
+    opacity:0; transition:opacity .12s ease;
+  }
+  .card:hover .actions, .card:focus-within .actions{opacity:1;}
+  .card .actions button{
+    width:26px; height:26px; border-radius:50%; border:none; background:rgba(43,35,24,0.08);
+    color:var(--ink-dim); display:flex; align-items:center; justify-content:center; cursor:pointer;
+  }
+  .card .actions button:hover{background:rgba(43,35,24,0.16); color:var(--ink);}
+  .card .actions .icon{width:14px; height:14px;}
+  .card .confirm-del{
+    position:absolute; inset:0; background:rgba(250,246,234,0.97); border-radius:inherit;
+    display:none; align-items:center; justify-content:center; flex-direction:column; gap:10px;
+    text-align:center; padding:14px;
+  }
+  .card.confirming .confirm-del{display:flex;}
+  .confirm-del p{margin:0; font-family:var(--font-display); font-size:0.85rem; color:var(--ink);}
+  .confirm-del .row{display:flex; gap:8px;}
+  .confirm-del button{
+    font-family:var(--font-display); font-weight:600; font-size:0.8rem; border:none;
+    padding:7px 14px; border-radius:999px; cursor:pointer;
+  }
+  .confirm-del .yes{background:var(--pen); color:#fff;}
+  .confirm-del .no{background:rgba(43,35,24,0.1); color:var(--ink);}
+
+  /* ---------- empty state ---------- */
+  .empty{
+    text-align:center; padding:70px 20px; color:var(--chalk-dim);
+  }
+  .empty .doodle{font-family:var(--font-hand); font-size:1.6rem; color:var(--chalk); display:block; margin-bottom:6px;}
+  .empty p{font-size:0.92rem; margin:0 0 18px;}
+
+  /* ---------- modal ---------- */
+  .overlay{
+    position:fixed; inset:0; background:rgba(10,14,10,0.6); backdrop-filter:blur(2px);
+    display:none; align-items:center; justify-content:center; z-index:100; padding:16px;
+  }
+  .overlay.open{display:flex;}
+  .modal{
+    background:var(--board-alt); border:1px solid var(--board-line); border-radius:14px;
+    width:100%; max-width:560px; max-height:88vh; overflow-y:auto; padding:22px;
+    color:var(--chalk);
+  }
+  .modal h2{font-family:var(--font-display); margin:0 0 14px; font-size:1.2rem;}
+  .tabs{display:flex; gap:6px; margin-bottom:18px; background:var(--board); padding:4px; border-radius:999px;}
+  .tabs button{
+    flex:1; background:none; border:none; padding:8px 10px; border-radius:999px;
+    font-family:var(--font-display); font-weight:600; font-size:0.85rem; color:var(--chalk-dim); cursor:pointer;
+    display:flex; align-items:center; justify-content:center; gap:6px;
+  }
+  .tabs button.active{background:var(--yellow); color:var(--yellow-ink);}
+  .tabpane{display:none;}
+  .tabpane.active{display:block;}
+
+  .field{margin-bottom:14px;}
+  .field label{
+    display:block; font-family:var(--font-display); font-size:0.78rem; font-weight:600;
+    color:var(--chalk-dim); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:6px;
+  }
+  .field .opt{font-family:var(--font-hand); text-transform:none; letter-spacing:0; font-size:0.95rem; color:var(--blue); font-weight:500;}
+  .field input, .field select, .field textarea{
+    width:100%; background:var(--board); border:1px solid var(--board-line); color:var(--chalk);
+    border-radius:8px; padding:10px 12px; font-size:0.96rem; outline:none; font-family:var(--font-body);
+  }
+  .field input:focus, .field select:focus, .field textarea:focus{border-color:var(--blue);}
+  .field-row{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+  .modal-actions{display:flex; justify-content:flex-end; gap:10px; margin-top:18px;}
+
+  /* photo tab */
+  .dropzone{
+    border:1.5px dashed var(--board-line); border-radius:12px; padding:26px 16px;
+    text-align:center; cursor:pointer; color:var(--chalk-dim); margin-bottom:16px;
+    transition:border-color .12s;
+  }
+  .dropzone:hover, .dropzone.drag{border-color:var(--blue); color:var(--chalk);}
+  .dropzone .icon{width:26px; height:26px; margin-bottom:8px;}
+  .preview-row{display:flex; align-items:center; gap:12px; margin-bottom:14px;}
+  .preview-row img{width:64px; height:64px; object-fit:cover; border-radius:8px; border:1px solid var(--board-line);}
+  .preview-row .meta{font-size:0.85rem; color:var(--chalk-dim); flex:1;}
+  .ocr-progress{
+    height:6px; background:var(--board); border-radius:99px; overflow:hidden; margin:10px 0 16px; display:none;
+  }
+  .ocr-progress.on{display:block;}
+  .ocr-progress > div{height:100%; width:0%; background:var(--blue); transition:width .2s;}
+  .ocr-status{font-size:0.82rem; color:var(--chalk-dim); margin:-8px 0 14px; display:none;}
+  .ocr-status.on{display:block;}
+  .ocr-error{
+    font-size:0.85rem; color:#f3c7c1; background:rgba(193,72,58,0.15); border:1px solid rgba(193,72,58,0.4);
+    border-radius:8px; padding:10px 12px; margin-bottom:14px; display:none;
+  }
+  .ocr-error.on{display:block;}
+
+  .review-list{border-top:1px dashed var(--board-line); padding-top:12px; margin-top:4px;}
+  .review-list h3{font-family:var(--font-display); font-size:0.85rem; margin:0 0 10px; color:var(--chalk-dim); font-weight:600;}
+  .review-row{
+    display:grid; grid-template-columns:1fr 1fr 1.4fr auto; gap:8px; margin-bottom:8px; align-items:center;
+  }
+  .review-row input{
+    background:var(--board); border:1px solid var(--board-line); color:var(--chalk);
+    border-radius:7px; padding:8px 9px; font-size:0.85rem; outline:none; font-family:var(--font-body);
+  }
+  .review-row input.orig{font-family:var(--font-word); direction:rtl; text-align:right;}
+  .review-row input:focus{border-color:var(--blue);}
+  .review-row button{
+    width:30px; height:30px; border-radius:50%; border:none; background:rgba(243,238,221,0.08);
+    color:var(--chalk-dim); cursor:pointer; display:flex; align-items:center; justify-content:center;
+  }
+  .review-row button:hover{color:#f3c7c1; background:rgba(193,72,58,0.15);}
+
+  /* ---------- study overlay ---------- */
+  .study-overlay{
+    position:fixed; inset:0; background:var(--board); z-index:200; display:none;
+    flex-direction:column; align-items:center; justify-content:center; padding:20px;
+  }
+  .study-overlay.open{display:flex;}
+  .study-top{position:absolute; top:18px; left:0; right:0; display:flex; justify-content:space-between; align-items:center; padding:0 22px;}
+  .study-count{font-family:var(--font-display); color:var(--chalk-dim); font-size:0.88rem;}
+  .study-card{
+    width:min(420px,90vw); min-height:260px; background:var(--card); color:var(--ink);
+    border-radius:14px; padding:34px 26px; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; text-align:center; cursor:pointer;
+    box-shadow:0 20px 40px rgba(0,0,0,0.4); perspective:1000px;
+  }
+  .study-card .original{font-family:var(--font-word); font-weight:700; font-size:2.3rem; direction:rtl; margin-bottom:4px;}
+  .study-card .answer{display:none; margin-top:18px; padding-top:16px; border-top:1px dashed rgba(43,35,24,0.2);}
+  .study-card.flipped .answer{display:block;}
+  .study-card .translit{font-family:var(--font-mono); font-style:italic; color:var(--ink-dim); font-size:1.05rem; margin-bottom:8px;}
+  .study-card .english{font-family:var(--font-body); font-size:1.15rem;}
+  .study-card .hint{font-family:var(--font-hand); color:var(--blue-ink); opacity:0.6; font-size:1.1rem; margin-top:16px;}
+  .study-controls{display:flex; gap:14px; margin-top:26px; align-items:center;}
+  .study-controls .icon-btn{width:46px; height:46px; border-color:var(--board-line); color:var(--chalk);}
+
+  /* ---------- toast ---------- */
+  .toast{
+    position:fixed; bottom:22px; left:50%; transform:translateX(-50%) translateY(20px);
+    background:var(--yellow); color:var(--yellow-ink); font-family:var(--font-display); font-weight:600;
+    font-size:0.88rem; padding:11px 20px; border-radius:999px; box-shadow:0 10px 24px rgba(0,0,0,0.35);
+    opacity:0; pointer-events:none; transition:opacity .2s ease, transform .2s ease; z-index:300;
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+
+  .visually-hidden{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap;}
+
+  @media (max-width:520px){
+    .field-row{grid-template-columns:1fr;}
+    .review-row{grid-template-columns:1fr; }
+    .brand h1{font-size:1.6rem;}
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{transition:none !important;}
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <h1>Word<span>hoard</span></h1>
+      <p>every word you've collected, one search away</p>
+    </div>
+    <div class="top-actions">
+      <button class="btn btn-ghost" id="studyBtn" title="Study mode">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M3 12c3-6 15-6 18 0"/><circle cx="12" cy="12" r="3"/></svg>
+        Study
+      </button>
+      <button class="btn btn-primary" id="addBtn">
+        <svg class="icon" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add word
+      </button>
+      <div class="menu">
+        <button class="icon-btn" id="menuBtn" aria-label="More options" aria-haspopup="true">
+          <svg class="icon" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="19" cy="12" r="1.4"/></svg>
+        </button>
+        <div class="menu-panel" id="menuPanel">
+          <button id="exportBtn">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M12 4v12"/><polyline points="7 11 12 16 17 11"/><path d="M5 20h14"/></svg>
+            Export backup
+          </button>
+          <button id="importBtn">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M12 16V4"/><polyline points="7 9 12 4 17 9"/><path d="M5 20h14"/></svg>
+            Import backup
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="toolbar">
+    <div class="search-tray">
+      <svg class="icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="searchInput" placeholder="Search words, meanings, transliterations…" aria-label="Search vocabulary">
+    </div>
+  </div>
+
+  <main>
+    <div class="grid" id="grid"></div>
+    <div class="empty" id="emptyState" style="display:none;">
+      <span class="doodle">your board is empty</span>
+      <p>Add your first word by typing it in, or snap a photo of a page.</p>
+      <button class="btn btn-primary" id="emptyAddBtn">
+        <svg class="icon" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add word
+      </button>
+    </div>
+  </main>
+</div>
+
+<!-- ===================== ADD / EDIT MODAL ===================== -->
+<div class="overlay" id="modalOverlay">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <h2 id="modalTitle">Add a word</h2>
+
+    <div class="tabs" id="modalTabs">
+      <button class="active" data-tab="manual">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+        Type it in
+      </button>
+      <button data-tab="photo">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M4 8V6a2 2 0 0 1 2-2h2l1.5-2h5L16 4h2a2 2 0 0 1 2 2v2"/><rect x="2" y="8" width="20" height="13" rx="2"/><circle cx="12" cy="14" r="3.5"/></svg>
+        Snap a photo
+      </button>
+    </div>
+
+    <!-- manual entry -->
+    <div class="tabpane active" id="pane-manual">
+      <form id="manualForm">
+        <input type="hidden" id="editId">
+        <div class="field">
+          <label for="f-original">Arabic word or phrase</label>
+          <input type="text" id="f-original" placeholder="e.g. مرحبا" dir="rtl" required>
+        </div>
+        <div class="field">
+          <label for="f-translit">Transliteration <span class="opt">— optional</span></label>
+          <input type="text" id="f-translit" placeholder="e.g. marhaban">
+        </div>
+        <div class="field">
+          <label for="f-english">English definition</label>
+          <input type="text" id="f-english" placeholder="e.g. hello" required>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-ghost" id="cancelManual">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="submitManual">Save word</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- photo import -->
+    <div class="tabpane" id="pane-photo">
+      <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="Choose or drop a photo">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M4 8V6a2 2 0 0 1 2-2h2l1.5-2h5L16 4h2a2 2 0 0 1 2 2v2"/><rect x="2" y="8" width="20" height="13" rx="2"/><circle cx="12" cy="14" r="3.5"/></svg>
+        <div>Tap to take a photo, or drop an image here</div>
+      </div>
+      <input type="file" accept="image/*" capture="environment" id="photoInput" class="visually-hidden">
+
+      <div class="preview-row" id="previewRow" style="display:none;">
+        <img id="previewImg" alt="">
+        <div class="meta" id="previewMeta"></div>
+        <button type="button" class="btn btn-ghost" id="scanBtn">Extract words</button>
+      </div>
+
+      <div class="ocr-status" id="ocrStatus"></div>
+      <div class="ocr-progress" id="ocrProgress"><div id="ocrProgressBar"></div></div>
+      <div class="ocr-error" id="ocrError"></div>
+
+      <div class="review-list" id="reviewList" style="display:none;">
+        <h3 id="reviewHeading">Found some words — check them over before adding</h3>
+        <div id="reviewRows"></div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-ghost" id="cancelPhoto">Cancel</button>
+          <button type="button" class="btn btn-primary" id="addReviewedBtn">Add to board</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<input type="file" accept="application/json" id="importFileInput" class="visually-hidden">
+
+<!-- ===================== STUDY MODE ===================== -->
+<div class="study-overlay" id="studyOverlay">
+  <div class="study-top">
+    <span class="study-count" id="studyCount">1 / 1</span>
+    <button class="icon-btn" id="studyClose" aria-label="Close study mode">
+      <svg class="icon" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+  <div class="study-card" id="studyCard">
+    <div class="original" id="studyOriginal"></div>
+    <div class="answer">
+      <div class="translit" id="studyTranslit"></div>
+      <div class="english" id="studyEnglish"></div>
+    </div>
+    <div class="hint">tap to flip</div>
+  </div>
+  <div class="study-controls">
+    <button class="icon-btn" id="studyPrev" aria-label="Previous card">
+      <svg class="icon" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <button class="icon-btn" id="studyShuffle" aria-label="Shuffle deck">
+      <svg class="icon" viewBox="0 0 24 24"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg>
+    </button>
+    <button class="icon-btn" id="studyNext" aria-label="Next card">
+      <svg class="icon" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------------- constants ---------------- */
+  var STORAGE_KEY = "wordhoard.words.v2";
+  var TAPE_CLASSES = ["c0","c1","c2"];
+
+  var OCR_LANG = "ara"; // this board is Arabic-only
+
+  var TESS_SRC = "https://cdn.jsdelivr.net/npm/tesseract.js@5.0.4/dist/tesseract.min.js";
+
+  /* ---------------- state ---------------- */
+  var state = {
+    words: [],
+    query: "",
+    study: { deck: [], index: 0, flipped: false }
+  };
+
+  var ocrReady = null; // promise
+  var pendingPhoto = null; // {file, dataUrl}
+
+  /* ---------------- utils ---------------- */
+  function uid(){
+    if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+    return "id-" + Date.now() + "-" + Math.random().toString(16).slice(2);
+  }
+  function escapeHtml(s){
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){
+      return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c];
+    });
+  }
+  function debounce(fn, ms){
+    var t;
+    return function(){
+      var args = arguments, ctx = this;
+      clearTimeout(t);
+      t = setTimeout(function(){ fn.apply(ctx, args); }, ms);
+    };
+  }
+  function tapeClassFor(id){
+    var s = 0;
+    for (var i=0;i<id.length;i++) s += id.charCodeAt(i);
+    return TAPE_CLASSES[s % TAPE_CLASSES.length];
+  }
+
+  /* ---------------- persistence ---------------- */
+  function loadWords(){
+    try{
+      var raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? JSON.parse(raw) : [];
+    }catch(e){ return []; }
+  }
+  function saveWords(){
+    try{
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state.words));
+    }catch(e){
+      showToast("Couldn't save — your browser storage may be full.");
+    }
+  }
+
+  /* ---------------- toast ---------------- */
+  var toastTimer;
+  function showToast(msg){
+    var el = document.getElementById("toast");
+    el.textContent = msg;
+    el.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ el.classList.remove("show"); }, 2600);
+  }
+
+  /* ---------------- render ---------------- */
+  function filteredWords(){
+    var q = state.query.trim().toLowerCase();
+    return state.words.filter(function(w){
+      if (!q) return true;
+      return (w.original + " " + w.transliteration + " " + w.english).toLowerCase().indexOf(q) !== -1;
+    }).sort(function(a,b){ return b.createdAt - a.createdAt; });
+  }
+
+  function renderGrid(){
+    var list = filteredWords();
+    var grid = document.getElementById("grid");
+    var empty = document.getElementById("emptyState");
+
+    if (state.words.length === 0){
+      grid.innerHTML = "";
+      empty.style.display = "block";
+      empty.querySelector(".doodle").textContent = "your board is empty";
+      empty.querySelector("p").textContent = "Add your first word by typing it in, or snap a photo of a page.";
+      return;
+    }
+    if (list.length === 0){
+      grid.innerHTML = "";
+      empty.style.display = "block";
+      empty.querySelector(".doodle").textContent = "no matches";
+      empty.querySelector("p").textContent = "Try a different search or pick another language.";
+      return;
+    }
+    empty.style.display = "none";
+
+    grid.innerHTML = list.map(function(w){
+      var translit = w.transliteration ? '<div class="translit">' + escapeHtml(w.transliteration) + '</div>' : "";
+      return (
+        '<div class="card" data-id="' + w.id + '">' +
+          '<div class="tape ' + tapeClassFor(w.id) + '"></div>' +
+          '<div class="actions">' +
+            '<button class="edit-btn" aria-label="Edit"><svg class="icon" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>' +
+            '<button class="del-btn" aria-label="Delete"><svg class="icon" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>' +
+          '</div>' +
+          '<div class="original" dir="rtl">' + escapeHtml(w.original) + '</div>' +
+          translit +
+          '<div class="english">' + escapeHtml(w.english) + '</div>' +
+          '<div class="confirm-del">' +
+            '<p>Remove this card?</p>' +
+            '<div class="row"><button class="no">Keep it</button><button class="yes">Delete</button></div>' +
+          '</div>' +
+        '</div>'
+      );
+    }).join("");
+
+    grid.querySelectorAll(".edit-btn").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        var id = btn.closest(".card").getAttribute("data-id");
+        openEditModal(id);
+      });
+    });
+    grid.querySelectorAll(".del-btn").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        btn.closest(".card").classList.add("confirming");
+      });
+    });
+    grid.querySelectorAll(".confirm-del .no").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        btn.closest(".card").classList.remove("confirming");
+      });
+    });
+    grid.querySelectorAll(".confirm-del .yes").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        var card = btn.closest(".card");
+        var id = card.getAttribute("data-id");
+        state.words = state.words.filter(function(w){ return w.id !== id; });
+        saveWords();
+        showToast("Word deleted.");
+        render();
+      });
+    });
+  }
+
+  function render(){
+    renderGrid();
+  }
+
+  /* ---------------- manual add / edit modal ---------------- */
+  var modalOverlay = document.getElementById("modalOverlay");
+
+  function openModal(){ modalOverlay.classList.add("open"); }
+  function closeModal(){
+    modalOverlay.classList.remove("open");
+    resetManualForm();
+    resetPhotoPane();
+    switchTab("manual");
+  }
+
+  function switchTab(tab){
+    document.querySelectorAll("#modalTabs button").forEach(function(b){
+      b.classList.toggle("active", b.getAttribute("data-tab") === tab);
+    });
+    document.getElementById("pane-manual").classList.toggle("active", tab === "manual");
+    document.getElementById("pane-photo").classList.toggle("active", tab === "photo");
+  }
+
+  document.getElementById("modalTabs").addEventListener("click", function(e){
+    var btn = e.target.closest("button[data-tab]");
+    if (!btn) return;
+    switchTab(btn.getAttribute("data-tab"));
+  });
+
+  function resetManualForm(){
+    document.getElementById("manualForm").reset();
+    document.getElementById("editId").value = "";
+    document.getElementById("modalTitle").textContent = "Add a word";
+    document.getElementById("submitManual").textContent = "Save word";
+  }
+
+  function openAddModal(){
+    resetManualForm();
+    switchTab("manual");
+    openModal();
+    setTimeout(function(){ document.getElementById("f-original").focus(); }, 60);
+  }
+
+  function openEditModal(id){
+    var w = state.words.find(function(x){ return x.id === id; });
+    if (!w) return;
+    switchTab("manual");
+    document.getElementById("editId").value = w.id;
+    document.getElementById("f-original").value = w.original;
+    document.getElementById("f-translit").value = w.transliteration || "";
+    document.getElementById("f-english").value = w.english;
+    document.getElementById("modalTitle").textContent = "Edit word";
+    document.getElementById("submitManual").textContent = "Save changes";
+    openModal();
+    setTimeout(function(){ document.getElementById("f-original").focus(); }, 60);
+  }
+
+  document.getElementById("addBtn").addEventListener("click", openAddModal);
+  document.getElementById("emptyAddBtn").addEventListener("click", openAddModal);
+  document.getElementById("cancelManual").addEventListener("click", closeModal);
+  document.getElementById("cancelPhoto").addEventListener("click", closeModal);
+  modalOverlay.addEventListener("click", function(e){ if (e.target === modalOverlay) closeModal(); });
+  document.addEventListener("keydown", function(e){
+    if (e.key === "Escape"){
+      if (modalOverlay.classList.contains("open")) closeModal();
+      if (document.getElementById("studyOverlay").classList.contains("open")) closeStudy();
+    }
+  });
+
+  document.getElementById("manualForm").addEventListener("submit", function(e){
+    e.preventDefault();
+    var id = document.getElementById("editId").value;
+    var original = document.getElementById("f-original").value.trim();
+    var translit = document.getElementById("f-translit").value.trim();
+    var english = document.getElementById("f-english").value.trim();
+    if (!original || !english) return;
+
+    if (id){
+      var w = state.words.find(function(x){ return x.id === id; });
+      if (w){
+        w.original = original; w.transliteration = translit; w.english = english;
+      }
+      showToast("Word updated.");
+    } else {
+      state.words.push({
+        id: uid(), original: original,
+        transliteration: translit, english: english, createdAt: Date.now()
+      });
+      showToast("Word added to your board.");
+    }
+    saveWords();
+    closeModal();
+    render();
+  });
+
+  /* ---------------- overflow menu ---------------- */
+  var menuBtn = document.getElementById("menuBtn");
+  var menuPanel = document.getElementById("menuPanel");
+  menuBtn.addEventListener("click", function(e){
+    e.stopPropagation();
+    menuPanel.classList.toggle("open");
+  });
+  document.addEventListener("click", function(){ menuPanel.classList.remove("open"); });
+
+  document.getElementById("exportBtn").addEventListener("click", function(){
+    var blob = new Blob([JSON.stringify(state.words, null, 2)], {type:"application/json"});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = "wordhoard-backup-" + new Date().toISOString().slice(0,10) + ".json";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast("Backup downloaded.");
+  });
+
+  var importFileInput = document.getElementById("importFileInput");
+  document.getElementById("importBtn").addEventListener("click", function(){ importFileInput.click(); });
+  importFileInput.addEventListener("change", function(){
+    var file = importFileInput.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function(){
+      try{
+        var data = JSON.parse(reader.result);
+        if (!Array.isArray(data)) throw new Error("bad format");
+        var added = 0;
+        data.forEach(function(item){
+          if (item && item.original && item.english){
+            state.words.push({
+              id: uid(), original: String(item.original),
+              transliteration: item.transliteration ? String(item.transliteration) : "",
+              english: String(item.english), createdAt: Date.now()
+            });
+            added++;
+          }
+        });
+        saveWords();
+        render();
+        showToast("Imported " + added + " word" + (added===1?"":"s") + ".");
+      }catch(e){
+        showToast("That file doesn't look like a Wordhoard backup.");
+      }
+      importFileInput.value = "";
+    };
+    reader.readAsText(file);
+  });
+
+  /* ---------------- search ---------------- */
+  document.getElementById("searchInput").addEventListener("input", debounce(function(e){
+    state.query = e.target.value;
+    renderGrid();
+  }, 120));
+
+  /* ---------------- photo import / OCR ---------------- */
+  var dropzone = document.getElementById("dropzone");
+  var photoInput = document.getElementById("photoInput");
+  var previewRow = document.getElementById("previewRow");
+  var previewImg = document.getElementById("previewImg");
+  var previewMeta = document.getElementById("previewMeta");
+  var scanBtn = document.getElementById("scanBtn");
+  var ocrProgress = document.getElementById("ocrProgress");
+  var ocrProgressBar = document.getElementById("ocrProgressBar");
+  var ocrStatus = document.getElementById("ocrStatus");
+  var ocrError = document.getElementById("ocrError");
+  var reviewList = document.getElementById("reviewList");
+  var reviewRows = document.getElementById("reviewRows");
+
+  dropzone.addEventListener("click", function(){ photoInput.click(); });
+  dropzone.addEventListener("keydown", function(e){ if (e.key === "Enter" || e.key === " ") photoInput.click(); });
+  dropzone.addEventListener("dragover", function(e){ e.preventDefault(); dropzone.classList.add("drag"); });
+  dropzone.addEventListener("dragleave", function(){ dropzone.classList.remove("drag"); });
+  dropzone.addEventListener("drop", function(e){
+    e.preventDefault();
+    dropzone.classList.remove("drag");
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) handlePhotoFile(e.dataTransfer.files[0]);
+  });
+  photoInput.addEventListener("change", function(){
+    if (photoInput.files && photoInput.files[0]) handlePhotoFile(photoInput.files[0]);
+  });
+
+  function handlePhotoFile(file){
+    if (!file.type.startsWith("image/")){
+      showToast("Please choose an image file.");
+      return;
+    }
+    pendingPhoto = { file: file };
+    var reader = new FileReader();
+    reader.onload = function(){
+      previewImg.src = reader.result;
+      pendingPhoto.dataUrl = reader.result;
+      previewMeta.textContent = file.name + " · " + Math.round(file.size/1024) + " KB";
+      previewRow.style.display = "flex";
+      reviewList.style.display = "none";
+      ocrError.classList.remove("on");
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function loadOcrEngine(){
+    if (ocrReady) return ocrReady;
+    ocrReady = new Promise(function(resolve, reject){
+      if (window.Tesseract){ resolve(window.Tesseract); return; }
+      var script = document.createElement("script");
+      script.src = TESS_SRC;
+      script.onload = function(){ resolve(window.Tesseract); };
+      script.onerror = function(){ reject(new Error("load-failed")); };
+      document.head.appendChild(script);
+    });
+    return ocrReady;
+  }
+
+  scanBtn.addEventListener("click", function(){
+    if (!pendingPhoto) return;
+    ocrError.classList.remove("on");
+    reviewList.style.display = "none";
+    ocrStatus.classList.add("on");
+    ocrProgress.classList.add("on");
+    ocrStatus.textContent = "Loading the scanner…";
+    ocrProgressBar.style.width = "5%";
+    scanBtn.disabled = true;
+
+    loadOcrEngine().then(function(Tesseract){
+      ocrStatus.textContent = "Reading the photo…";
+      return Tesseract.recognize(pendingPhoto.dataUrl, OCR_LANG, {
+        logger: function(m){
+          if (m.status && typeof m.progress === "number"){
+            ocrStatus.textContent = m.status.replace(/_/g, " ");
+            ocrProgressBar.style.width = Math.max(5, Math.round(m.progress*100)) + "%";
+          }
+        }
+      });
+    }).then(function(result){
+      ocrStatus.classList.remove("on");
+      ocrProgress.classList.remove("on");
+      scanBtn.disabled = false;
+      buildReviewRows(result.data.text);
+    }).catch(function(err){
+      ocrStatus.classList.remove("on");
+      ocrProgress.classList.remove("on");
+      scanBtn.disabled = false;
+      ocrError.classList.add("on");
+      ocrError.textContent = "Couldn't scan that photo — check your connection and try again, or switch to \u201cType it in\u201d.";
+      console.error(err);
+    });
+  });
+
+  function buildReviewRows(text){
+    var lines = text.split("\n").map(function(l){ return l.trim(); }).filter(function(l){ return l.length > 0; });
+    // de-duplicate consecutive identical lines
+    var seen = {};
+    lines = lines.filter(function(l){
+      var key = l.toLowerCase();
+      if (seen[key]) return false;
+      seen[key] = true;
+      return true;
+    });
+    if (lines.length === 0){
+      ocrError.classList.add("on");
+      ocrError.textContent = "No text was found in that photo. Try a clearer, closer shot.";
+      return;
+    }
+    reviewRows.innerHTML = lines.map(function(line, i){
+      return (
+        '<div class="review-row" data-idx="' + i + '">' +
+          '<input class="orig" data-field="original" placeholder="Original" value="' + escapeHtml(line) + '">' +
+          '<input data-field="transliteration" placeholder="Transliteration (optional)">' +
+          '<input data-field="english" placeholder="English definition">' +
+          '<button type="button" class="remove-row" aria-label="Remove"><svg class="icon" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>' +
+        '</div>'
+      );
+    }).join("");
+    reviewRows.querySelectorAll(".remove-row").forEach(function(btn){
+      btn.addEventListener("click", function(){ btn.closest(".review-row").remove(); });
+    });
+    document.getElementById("reviewHeading").textContent =
+      "Found " + lines.length + " line" + (lines.length===1?"":"s") + " — check them over before adding";
+    reviewList.style.display = "block";
+  }
+
+  document.getElementById("addReviewedBtn").addEventListener("click", function(){
+    var rows = reviewRows.querySelectorAll(".review-row");
+    var added = 0;
+    rows.forEach(function(row){
+      var original = row.querySelector('[data-field="original"]').value.trim();
+      var translit = row.querySelector('[data-field="transliteration"]').value.trim();
+      var english = row.querySelector('[data-field="english"]').value.trim();
+      if (!original) return;
+      state.words.push({
+        id: uid(), original: original,
+        transliteration: translit, english: english || "(add a definition)", createdAt: Date.now()
+      });
+      added++;
+    });
+    if (added === 0){
+      showToast("Add at least one original word first.");
+      return;
+    }
+    saveWords();
+    render();
+    showToast("Added " + added + " word" + (added===1?"":"s") + " to your board.");
+    closeModal();
+  });
+
+  function resetPhotoPane(){
+    pendingPhoto = null;
+    photoInput.value = "";
+    previewRow.style.display = "none";
+    reviewList.style.display = "none";
+    ocrError.classList.remove("on");
+    ocrStatus.classList.remove("on");
+    ocrProgress.classList.remove("on");
+    ocrProgressBar.style.width = "0%";
+  }
+
+  /* ---------------- study mode ---------------- */
+  var studyOverlay = document.getElementById("studyOverlay");
+  var studyCard = document.getElementById("studyCard");
+
+  function shuffle(arr){
+    var a = arr.slice();
+    for (var i = a.length-1; i>0; i--){
+      var j = Math.floor(Math.random()*(i+1));
+      var tmp = a[i]; a[i]=a[j]; a[j]=tmp;
+    }
+    return a;
+  }
+
+  function openStudy(){
+    var deck = shuffle(filteredWords());
+    if (deck.length === 0){
+      showToast("No words to study yet — add a few first.");
+      return;
+    }
+    state.study.deck = deck;
+    state.study.index = 0;
+    state.study.flipped = false;
+    renderStudyCard();
+    studyOverlay.classList.add("open");
+  }
+  function closeStudy(){ studyOverlay.classList.remove("open"); }
+
+  function renderStudyCard(){
+    var w = state.study.deck[state.study.index];
+    document.getElementById("studyOriginal").textContent = w.original;
+    document.getElementById("studyTranslit").textContent = w.transliteration || "";
+    document.getElementById("studyEnglish").textContent = w.english;
+    studyCard.classList.toggle("flipped", state.study.flipped);
+    document.getElementById("studyCount").textContent = (state.study.index+1) + " / " + state.study.deck.length;
+  }
+
+  studyCard.addEventListener("click", function(){
+    state.study.flipped = !state.study.flipped;
+    studyCard.classList.toggle("flipped", state.study.flipped);
+  });
+  document.getElementById("studyNext").addEventListener("click", function(){
+    state.study.index = (state.study.index+1) % state.study.deck.length;
+    state.study.flipped = false;
+    renderStudyCard();
+  });
+  document.getElementById("studyPrev").addEventListener("click", function(){
+    state.study.index = (state.study.index-1+state.study.deck.length) % state.study.deck.length;
+    state.study.flipped = false;
+    renderStudyCard();
+  });
+  document.getElementById("studyShuffle").addEventListener("click", function(){
+    state.study.deck = shuffle(state.study.deck);
+    state.study.index = 0;
+    state.study.flipped = false;
+    renderStudyCard();
+  });
+  document.getElementById("studyClose").addEventListener("click", closeStudy);
+  document.getElementById("studyBtn").addEventListener("click", openStudy);
+
+  document.addEventListener("keydown", function(e){
+    if (!studyOverlay.classList.contains("open")) return;
+    if (e.key === "ArrowRight") document.getElementById("studyNext").click();
+    if (e.key === "ArrowLeft") document.getElementById("studyPrev").click();
+    if (e.key === " "){ e.preventDefault(); studyCard.click(); }
+  });
+
+  /* ---------------- init ---------------- */
+  function init(){
+    state.words = loadWords();
+    render();
+  }
+  init();
+})();
+</script>
+</body>
+</html>
